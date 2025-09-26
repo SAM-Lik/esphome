@@ -2105,3 +2105,50 @@ async def Toto_action(var, config, args):
     cg.add(var.set_rc_code_2(template_))
     template_ = await cg.templatable(config[CONF_COMMAND], args, cg.uint8)
     cg.add(var.set_command(template_))
+
+
+# Symphony
+(
+    SymphonyData,
+    SymphonyBinarySensor,
+    SymphonyTrigger,
+    SymphonyAction,
+    SymphonyDumper,
+) = declare_protocol("Symphony")
+Symphony_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_DATA): cv.hex_uint32_t,
+        cv.Required(CONF_NBITS): cv.hex_uint32_t,
+    }
+)
+
+
+@register_binary_sensor("Symphony", SymphonyBinarySensor, Symphony_SCHEMA)
+def Symphony_binary_sensor(var, config):
+    cg.add(
+        var.set_data(
+            cg.StructInitializer(
+                SymphonyData,
+                ("address", config[CONF_DATA]),
+                ("command", config[CONF_NBITS]),
+            )
+        )
+    )
+
+
+@register_trigger("Symphony", SymphonyTrigger, SymphonyData)
+def Symphony_trigger(var, config):
+    pass
+
+
+@register_dumper("Symphony", SymphonyDumper)
+def Symphony_dumper(var, config):
+    pass
+
+
+@register_action("Symphony", SymphonyAction, Symphony_SCHEMA)
+async def Symphony_action(var, config, args):
+    template_ = await cg.templatable(config[CONF_DATA], args, cg.uint32)
+    cg.add(var.set_address(template_))
+    template_ = await cg.templatable(config[CONF_NBITS], args, cg.uint32)
+    cg.add(var.set_command(template_))
