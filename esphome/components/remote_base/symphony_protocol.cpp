@@ -4,7 +4,7 @@
 namespace esphome {
 namespace remote_base {
 
-static const char *const TAG = "remote.Symphony";
+static const char *const TAG = "remote.symphony";
 
 const uint16_t kSymphonyBits = 12;
 const uint8_t cSymphonyFrame = 8;
@@ -73,7 +73,6 @@ optional<SymphonyData> SymphonyProtocol::decode(RemoteReceiveData src) {
     }
 
     correct_val.push_back(k_bit);
-    ESP_LOGD(TAG, "Decode[%d] 0x%X", frame, k_bit);
   }
   if (correct_val.size() == 0)
     return {};
