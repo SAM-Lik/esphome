@@ -6,7 +6,7 @@ namespace remote_base {
 
 static const char *const TAG = "remote.symphony";
 
-const uint16_t kSymphonyBits = 12;
+const uint8_t cSymphonyBits = 12;
 const uint8_t cSymphonyFrame = 8;
 const uint32_t cSymphonyMark = 400;
 const uint32_t cSymphonySpace = 1250;
@@ -16,7 +16,7 @@ void SymphonyProtocol::encode(RemoteTransmitData *dst, const SymphonyData &data)
   dst->set_carrier_frequency(38000);
 
   for (uint8_t frame = 0; frame < cSymphonyFrame; ++frame) {
-    for (uint8_t bit = data.nbits; bit > 1; bit--) {
+    for (uint8_t bit = cSymphonyBits; bit > 1; bit--) {
       if ((data.data >> (bit - 1)) & 1) {
         dst->item(cSymphonySpace, cSymphonyMark);
       } else {
@@ -34,32 +34,28 @@ void SymphonyProtocol::encode(RemoteTransmitData *dst, const SymphonyData &data)
 optional<SymphonyData> SymphonyProtocol::decode(RemoteReceiveData src) {
   SymphonyData out{
       .data = 0,
-      .nbits = 0,
   };
   std::vector<uint32_t> correct_val;
-  if (src.size() < kSymphonyBits) {
-    ESP_LOGD(TAG, "Ret 1");
-    return {};  // Проверяем, что данных достаточно
+  if (src.size() < cSymphonyBits) {
+    return {};
   }
+  uint16_t Frame_size = src.size() / (cSymphonyBits * 2);
   size_t k_bit = 0;
-  for (auto frame = 0; frame < cSymphonyFrame; ++frame) {
+  for (auto frame = 0; frame < Frame_size; ++frame) {
     k_bit = 0;
     if (!src.expect_item(cSymphonySpace, cSymphonyMark)) {
-      ESP_LOGD(TAG, "Ret 2");
       continue;
     }
     k_bit = (k_bit << 1) | 1;
     if (!src.expect_item(cSymphonySpace, cSymphonyMark)) {
-      ESP_LOGD(TAG, "Ret 3");
       continue;
     }
     k_bit = (k_bit << 1) | 1;
     if (!src.expect_item(cSymphonyMark, cSymphonySpace)) {
-      ESP_LOGD(TAG, "Ret 4");
       continue;
     }
     k_bit = (k_bit << 1);
-    for (auto i = 0; i < 8; i++) {
+    for (auto i = 0; i < cSymphonyBits - 4; i++) {
       if (src.expect_item(cSymphonySpace, cSymphonyMark)) {
         k_bit = (k_bit << 1) | 1;
       } else if (src.expect_item(cSymphonyMark, cSymphonySpace)) {
@@ -71,18 +67,17 @@ optional<SymphonyData> SymphonyProtocol::decode(RemoteReceiveData src) {
     } else if (src.expect_item(cSymphonyMark, cSymphonySpace + cSymphonyGap)) {
       k_bit = (k_bit << 1);
     }
-
+    ESP_LOGD(TAG, "Recieve frame %d from %d, value = 0x%08" PRIX32, frame, Frame_size, k_bit);
     correct_val.push_back(k_bit);
   }
   if (correct_val.size() == 0)
     return {};
   out.data = correct_val.front();
-  out.nbits = kSymphonyBits;
   return out;
 }
 
 void SymphonyProtocol::dump(const SymphonyData &data) {
-  ESP_LOGI(TAG, "Received Symphony: data=0x%08" PRIX32 ", nbits=%d", data.data, data.nbits);
+  ESP_LOGI(TAG, "Received Symphony: data=0x%08" PRIX32, data.data);
 }
 
 }  // namespace remote_base

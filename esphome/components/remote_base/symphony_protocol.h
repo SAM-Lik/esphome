@@ -10,8 +10,7 @@ namespace remote_base {
 
 struct SymphonyData {
   uint32_t data;
-  uint8_t nbits;
-  bool operator==(const SymphonyData &rhs) const { return data == rhs.data && nbits == rhs.nbits; }
+  bool operator==(const SymphonyData &rhs) const { return data == rhs.data; }
 };
 
 class SymphonyProtocol : public RemoteProtocol<SymphonyData> {
@@ -26,12 +25,9 @@ DECLARE_REMOTE_PROTOCOL(Symphony)
 template<typename... Ts> class SymphonyAction : public RemoteTransmitterActionBase<Ts...> {
  public:
   TEMPLATABLE_VALUE(uint32_t, data)
-  TEMPLATABLE_VALUE(uint8_t, nbits)
-
   void encode(RemoteTransmitData *dst, Ts... x) override {
     SymphonyData data{};
     data.data = this->data_.value(x...);
-    data.nbits = this->nbits_.value(x...);
     SymphonyProtocol().encode(dst, data);
   }
 };

@@ -2118,7 +2118,6 @@ async def Toto_action(var, config, args):
 Symphony_SCHEMA = cv.Schema(
     {
         cv.Required(CONF_DATA): cv.hex_uint32_t,
-        cv.Required(CONF_NBITS): cv.hex_uint8_t,
     }
 )
 
@@ -2130,7 +2129,6 @@ def Symphony_binary_sensor(var, config):
             cg.StructInitializer(
                 SymphonyData,
                 ("data", config[CONF_DATA]),
-                ("nbits", config[CONF_NBITS]),
             )
         )
     )
@@ -2150,5 +2148,3 @@ def Symphony_dumper(var, config):
 async def Symphony_action(var, config, args):
     template_ = await cg.templatable(config[CONF_DATA], args, cg.uint32)
     cg.add(var.set_data(template_))
-    template_ = await cg.templatable(config[CONF_NBITS], args, cg.uint8)
-    cg.add(var.set_nbits(template_))
